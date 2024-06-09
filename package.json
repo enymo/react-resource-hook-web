@@ -1,0 +1,59 @@
+{
+  "name": "@enymo/react-resource-hook-web",
+  "version": "0.0.0",
+  "description": "Web API adapter for the react resource hook",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.ts"
+      }
+    }
+  },
+  "tsup": {
+    "entry": [
+      "src/js/index.ts"
+    ],
+    "format": [
+      "esm",
+      "cjs"
+    ],
+    "dts": true
+  },
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "repository": {
+    "type": "git",
+    "url": "<GIT URL>"
+  },
+  "author": "enymo GmbH",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/pluralize": "^0.0.33",
+    "@types/react": "^18.3.3",
+    "postcss": "^8.4.17",
+    "ts-essentials": "^10.0.0",
+    "tsup": "^8.0.2",
+    "typescript": "^4.7.4"
+  },
+  "peerDependencies": {
+    "@enymo/react-resource-hook": "^5.0.0-dev.5",
+    "@enymo/react-socket-hook": "^1.1.4",
+    "react": ">=17.0.0"
+  },
+  "dependencies": {
+    "@enymo/react-better-context": "^1.0.1",
+    "@enymo/ts-nullsafe": "^1.1.1",
+    "axios": "^1.7.2",
+    "pluralize": "^8.0.0"
+  }
+}
