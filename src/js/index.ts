@@ -79,7 +79,7 @@ export default function createWebResourceAdapter({
                             [paramName]: id,
                             ...params
                         });
-                        return (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
+                        return transformer((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
                             ...body,
                             _method: "put"
                         }, reactNative), {
@@ -88,14 +88,14 @@ export default function createWebResourceAdapter({
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        }) : axios.put(route, body, config)
+                        }) : axios.put(route, body, config))).data)
                     },
                     async batchUpdate(data, config) {
                         const body = {
                             _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
                         const route = routeFunction(`${resource}.batch.update`, params);
-                        return (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
+                        return Promise.all((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
                             ...body,
                             _method: "put"
                         }, reactNative), {
@@ -104,16 +104,16 @@ export default function createWebResourceAdapter({
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        }) : axios.put(route, body, config); 
+                        }) : axios.put(route, body, config))).data.map(inverseTransformer)); 
                     },
                     async destroy(id, config) {
-                        return axios.delete(routeFunction(`${resource}.destroy`, {
+                        await axios.delete(routeFunction(`${resource}.destroy`, {
                             [paramName]: id,
                             ...params
                         }), config);
                     },
                     async batchDestroy(ids, config) {
-                        return axios.delete(routeFunction(`${resource}.batch.destroy`, {
+                        await axios.delete(routeFunction(`${resource}.batch.destroy`, {
                             ids,
                             ...params
                         }), config);
