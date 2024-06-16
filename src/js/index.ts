@@ -50,7 +50,7 @@ export default function createWebResourceAdapter({
                 const {axios, routeFunction} = useContext();
                 const paramName = useMemo(() => paramNameOverride ?? (resource && (paramNameCallback?.(resource) ?? pluralize.singular(requireNotNull(resource.split(".").pop())).replace(/-/g, "_"))), [paramNameOverride, resource]);
     
-                return {
+                return useMemo(() => ({
                     async store(resource, config) {
                         const body = conditionalApply(await inverseTransformer(resource), inverseDateTransformer, transformDates);
                         return transformer(axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
@@ -171,7 +171,7 @@ export default function createWebResourceAdapter({
                             }
                         }
                     }
-                }
+                }), [useFormData, params])
             },
             eventHook: (params, event, handler, dependencies) => {
                 const eventBase = useMemo(() => eventOverride ?? eventNameCallback?.(resource, params) ?? resource?.split(".").map(part => {
