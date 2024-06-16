@@ -51,8 +51,8 @@ export default function createWebResourceAdapter({
                 const paramName = useMemo(() => paramNameOverride ?? (resource && (paramNameCallback?.(resource) ?? pluralize.singular(requireNotNull(resource.split(".").pop())).replace(/-/g, "_"))), [paramNameOverride, resource]);
     
                 return useMemo(() => ({
-                    async store(resource, config) {
-                        const body = conditionalApply(await inverseTransformer(resource), inverseDateTransformer, transformDates);
+                    async store(data, config) {
+                        const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
                         return transformer(axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
@@ -61,9 +61,9 @@ export default function createWebResourceAdapter({
                             },
                         } : config))
                     },
-                    async batchStore(resources, config) {
+                    async batchStore(data, config) {
                         const body = {
-                            _batch: await Promise.all(resources.map(async resource => filter(await inverseTransformer(resource))))
+                            _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
                         return transformer(axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
@@ -73,8 +73,8 @@ export default function createWebResourceAdapter({
                             }
                         } : config));
                     },
-                    async update(id, resource, config) {
-                        const body = filter(await inverseTransformer(resource));
+                    async update(id, data, config) {
+                        const body = filter(await inverseTransformer(data));
                         const route = routeFunction(`${resource}.update`, {
                             [paramName]: id,
                             ...params
@@ -90,9 +90,9 @@ export default function createWebResourceAdapter({
                             }
                         }) : axios.put(route, body, config)
                     },
-                    async batchUpdate(resources, config) {
+                    async batchUpdate(data, config) {
                         const body = {
-                            _batch: await Promise.all(resources.map(async resource => filter(await inverseTransformer(resource))))
+                            _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
                         const route = routeFunction(`${resource}.batch.update`, params);
                         return (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
