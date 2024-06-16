@@ -36,12 +36,12 @@ export default function createWebResourceAdapter({
     return (resource, {
         paramName: paramNameOverride,
         socketEvent: eventOverride,
-        transformer = identity,
-        inverseTransformer = identity,
+        transformer: baseTransformer = identity,
+        inverseTransformer: baseInverseTransformer = identity,
         transformDates = false
     }) => {
-        transformer = transformDates ? async (item: any) => dateTransformer(await transformer(item)) : transformer;
-        inverseTransformer = transformDates ? async (item: any) => inverseDateTransformer(await inverseTransformer(item)) : inverseDateTransformer;
+        const transformer = transformDates ? async (item: any) => dateTransformer(await baseTransformer(item)) : baseTransformer;
+        const inverseTransformer = transformDates ? async (item: any) => inverseDateTransformer(await baseInverseTransformer(item)) : baseInverseTransformer;
 
         return {
             actionHook: ({
