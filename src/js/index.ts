@@ -53,25 +53,25 @@ export default function createWebResourceAdapter({
                 return useMemo(() => ({
                     async store(data, config) {
                         const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
-                        return transformer(axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                        return transformer((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             },
-                        } : config))
+                        } : config)).data)
                     },
                     async batchStore(data, config) {
                         const body = {
                             _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
-                        return transformer(axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                        return Promise.all((await axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        } : config));
+                        } : config)).data.map(transformer));
                     },
                     async update(id, data, config) {
                         const body = filter(await inverseTransformer(data));
