@@ -1,6 +1,6 @@
 {
   "name": "@enymo/react-resource-hook-web",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Web API adapter for the react resource hook",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
