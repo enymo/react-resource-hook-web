@@ -161,7 +161,7 @@ export default function createWebResourceAdapter({
                         catch (e) {
                             if (e instanceof AxiosError) {
                                 return {
-                                    data: [],
+                                    data: id !== undefined ? null : [],
                                     extra: null as any,
                                     error: e
                                 }
