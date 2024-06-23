@@ -142,20 +142,26 @@ export default function createWebResourceAdapter({
                                 [paramName]: id,
                                 ...params
                             }) : routeFunction(`${resource}.index`, params), config)).data;
-                            if ("data" in response) {
-                                const {data, extra} = response;
-                                return {
-                                    data,
-                                    extra,
-                                    error: null
+                            const result = (() => {
+                                if ("data" in response) {
+                                    const {data, extra} = response;
+                                    return {
+                                        data,
+                                        extra,
+                                        error: null
+                                    }
                                 }
-                            }
-                            else {
-                                return {
-                                    data: response,
-                                    extra: null as any,
-                                    error: null
+                                else {
+                                    return {
+                                        data: response,
+                                        extra: null as any,
+                                        error: null
+                                    }
                                 }
+                            })()
+                            return {
+                                ...result,
+                                data: await (Array.isArray(result.data) ? Promise.all(result.data.map(transformer)) : transformer(result.data))
                             }
                         }
                         catch (e) {
