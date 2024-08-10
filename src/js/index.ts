@@ -136,12 +136,12 @@ export default function createWebResourceAdapter({
                             update: response.headers["x-resource-update"] ?? "merge"
                         }
                     },
-                    async refresh(id, config) {
+                    async refresh(id, config, signal) {
                         try {
                             const response = (await axios.get(id !== undefined ? routeFunction(`${resource}.show`, {
                                 [paramName]: id,
                                 ...params
-                            }) : routeFunction(`${resource}.index`, params), config)).data;
+                            }) : routeFunction(`${resource}.index`, params), {...config, signal})).data;
                             const result = (() => {
                                 if ("data" in response) {
                                     const {data, extra} = response;
