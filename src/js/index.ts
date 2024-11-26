@@ -144,17 +144,17 @@ export default function createWebResourceAdapter({
                             }) : routeFunction(`${resource}.index`, params), {...config, signal})).data;
                             const result = (() => {
                                 if ("data" in response) {
-                                    const {data, extra} = response;
+                                    const {data, meta} = response;
                                     return {
                                         data,
-                                        extra,
+                                        meta,
                                         error: null
                                     }
                                 }
                                 else {
                                     return {
                                         data: response,
-                                        extra: null as any,
+                                        meta: null as any,
                                         error: null
                                     }
                                 }
@@ -168,7 +168,7 @@ export default function createWebResourceAdapter({
                             if (e instanceof AxiosError) {
                                 return {
                                     data: id !== undefined ? null : [],
-                                    extra: null as any,
+                                    meta: null as any,
                                     error: e
                                 }
                             }
