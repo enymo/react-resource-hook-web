@@ -6,7 +6,7 @@ import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import pluralize from "pluralize";
 import { useMemo } from "react";
 import { RouteFunction } from "./types";
-import { conditionalApply, dateTransformer, filter, identity, inverseDateTransformer, objectNeedsFormDataConversion, objectToFormData } from "./util";
+import { conditionalApply, dateTransformer, filter, identity, inverseDateTransformer, objectNeedsFormDataConversion, objectToFormData, unwrap } from "./util";
 
 export type { RouteFunction };
 
@@ -53,25 +53,25 @@ export default function createWebResourceAdapter({
                 return useMemo(() => ({
                     async store(data, config) {
                         const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
-                        return transformer((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                        return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             },
-                        } : config)).data)
+                        } : config)).data).data)
                     },
                     async batchStore(data, config) {
                         const body = {
                             _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
-                        return Promise.all((await axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                        return Promise.all(unwrap((await axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        } : config)).data.map(transformer));
+                        } : config)).data).data.map(transformer));
                     },
                     async update(id, data, config) {
                         const body = filter(await inverseTransformer(data));
@@ -79,7 +79,7 @@ export default function createWebResourceAdapter({
                             [paramName]: id,
                             ...params
                         });
-                        return transformer((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
+                        return transformer(unwrap((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
                             ...body,
                             _method: "put"
                         }, reactNative), {
@@ -88,14 +88,14 @@ export default function createWebResourceAdapter({
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        }) : axios.put(route, body, config))).data)
+                        }) : axios.put(route, body, config))).data).data)
                     },
                     async batchUpdate(data, config) {
                         const body = {
                             _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
                         const route = routeFunction(`${resource}.batch.update`, params);
-                        return Promise.all((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
+                        return Promise.all(unwrap((await ((useFormData || objectNeedsFormDataConversion(body, reactNative)) ? axios.post(route, objectToFormData({
                             ...body,
                             _method: "put"
                         }, reactNative), {
@@ -104,7 +104,7 @@ export default function createWebResourceAdapter({
                                 ...config?.headers,
                                 "content-type": "multipart/form-data"
                             }
-                        }) : axios.put(route, body, config))).data.map(inverseTransformer)); 
+                        }) : axios.put(route, body, config))).data).data.map(inverseTransformer)); 
                     },
                     async destroy(id, config) {
                         await axios.delete(routeFunction(`${resource}.destroy`, {
@@ -138,30 +138,14 @@ export default function createWebResourceAdapter({
                     },
                     async refresh(id, config, signal) {
                         try {
-                            const response = (await axios.get(id !== undefined ? routeFunction(`${resource}.show`, {
+                            const response = unwrap((await axios.get(id !== undefined ? routeFunction(`${resource}.show`, {
                                 [paramName]: id,
                                 ...params
-                            }) : routeFunction(`${resource}.index`, params), {...config, signal})).data;
-                            const result = (() => {
-                                if ("data" in response) {
-                                    const {data, meta} = response;
-                                    return {
-                                        data,
-                                        meta,
-                                        error: null
-                                    }
-                                }
-                                else {
-                                    return {
-                                        data: response,
-                                        meta: null as any,
-                                        error: null
-                                    }
-                                }
-                            })()
+                            }) : routeFunction(`${resource}.index`, params), {...config, signal})).data);
                             return {
-                                ...result,
-                                data: await (Array.isArray(result.data) ? Promise.all(result.data.map(transformer)) : transformer(result.data))
+                                meta: response.meta as any,
+                                data: await (Array.isArray(response.data) ? Promise.all(response.data.map(transformer)) : transformer(response.data)),
+                                error: null
                             }
                         }
                         catch (e) {

@@ -139,3 +139,18 @@ export function inverseDateTransformer(input: any) {
 export function conditionalApply(input: any, func: Function, apply: boolean) {
     return apply ? func(input) : input;
 }
+
+export function unwrap(input: object) {
+    if ("data" in input && typeof input.data === "object" && input.data !== null) {
+        return {
+            data: input.data as any,
+            meta: "meta" in input ? input.meta : null as any
+        }
+    }
+    else {
+        return {
+            data: input,
+            meta: null
+        }
+    }
+}
