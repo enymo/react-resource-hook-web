@@ -121,7 +121,7 @@ export default function createWebResourceAdapter({
                     async query(action, data, params, config) {
                         const response = await axios.post(routeFunction(`${resource}.${action}`, params), data, config);
                         return {
-                            data: unwrap(response.data),
+                            data: unwrap(response.data) as any,
                             destroy: response.headers["x-resource-destroy"]?.split(",").map((id: string) => {
                                 const [,type,value] = requireNotNull(id.match(/(i|s):(\d)+/), "Unable to parse x-resource-destroy header");
                                 switch (type) {
