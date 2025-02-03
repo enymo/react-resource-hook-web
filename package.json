@@ -46,7 +46,7 @@
     "typescript": "^4.7.4"
   },
   "peerDependencies": {
-    "@enymo/react-resource-hook": ">=5.0.0-beta.8",
+    "@enymo/react-resource-hook": "^5.0.0-beta.9",
     "@enymo/react-socket-hook": "^1.1.4",
     "react": ">=17.0.0"
   },
