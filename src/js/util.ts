@@ -15,10 +15,7 @@ function isAtomic(input: any, reactNative: boolean) {
 }
 
 function isFile(input: any, reactNative: boolean) {
-    return (
-        input instanceof File
-        || (reactNative && "uri" in input && "name" in input && "type" in input)
-    )
+    return reactNative ? "uri" in input && "name" in input && "type" in input : input instanceof File;
 }
 
 export function objectNeedsFormDataConversion(input: any, reactNative: boolean): boolean {
