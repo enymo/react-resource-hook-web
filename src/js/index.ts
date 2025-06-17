@@ -161,7 +161,7 @@ export default function createWebResourceAdapter({
                             }
                         }
                     }
-                }), [useFormData, params])
+                }), [useFormData, params, axios, routeFunction])
             },
             eventHook: (params, event, handler, dependencies) => {
                 const eventBase = useMemo(() => eventOverride ?? eventNameCallback?.(resource, params) ?? resource?.split(".").map(part => {
