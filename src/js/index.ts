@@ -65,13 +65,17 @@ export default function createWebResourceAdapter({
                         const body = {
                             _batch: await Promise.all(data.map(async resource => filter(await inverseTransformer(resource))))
                         };
-                        return Promise.all(unwrap((await axios.post(routeFunction(`${resource}.batch.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
-                            ...config,
-                            headers: {
-                                ...config?.headers,
-                                "content-type": "multipart/form-data"
-                            }
-                        } : config)).data).data.map(transformer));
+                        return Promise.all(unwrap((await axios.post(
+                            routeFunction(`${resource}.batch.store`, params), 
+                            (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, 
+                            useFormData ? {
+                                ...config,
+                                headers: {
+                                    ...config?.headers,
+                                    "content-type": "multipart/form-data"
+                                }
+                            } : config
+                        )).data).data.map(transformer));
                     },
                     async update(id, data, config) {
                         const body = filter(await inverseTransformer(data));
