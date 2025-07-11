@@ -1,8 +1,8 @@
 import { createRequiredContext } from "@enymo/react-better-context";
-import type { Params, ResourceBackendAdapter } from "@enymo/react-resource-hook";
+import { OfflineError, type Params, type ResourceBackendAdapter } from "@enymo/react-resource-hook";
 import useSocket from "@enymo/react-socket-hook";
 import { requireNotNull } from "@enymo/ts-nullsafe";
-import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import pluralize from "pluralize";
 import { useMemo } from "react";
 import { RouteFunction } from "./types";
@@ -12,18 +12,21 @@ export type { RouteFunction };
 
 const [WebResourceProvider, useContext] = createRequiredContext<{
     axios: AxiosInstance,
-    routeFunction: RouteFunction
+    routeFunction: RouteFunction,
+    offline?: boolean
 }>("WebResourceProvider must be present in component tree");
 
 export { WebResourceProvider };
 export default function createWebResourceAdapter({
     reactNative = false,
     paramNameCallback,
-    eventNameCallback
+    eventNameCallback,
+    offlineCallback
 }: {
     reactNative?: boolean,
     paramNameCallback?: (resource: string) => string,
-    eventNameCallback?: (resource: string, params?: Params) => string
+    eventNameCallback?: (resource: string, params?: Params) => string,
+    offlineCallback?: (response: AxiosResponse) => boolean
 }): ResourceBackendAdapter<{
     paramName?: string,
     socketEvent?: string,
@@ -33,6 +36,13 @@ export default function createWebResourceAdapter({
 }, {
     useFormData?: boolean
 }, AxiosRequestConfig, AxiosError> {
+    const handleError = (e: unknown) => {
+        if (e instanceof AxiosError && (e.response === undefined || offlineCallback?.(e.response))) {
+            throw OfflineError
+        }
+        throw e;
+    }
+
     return (resource, {
         paramName: paramNameOverride,
         socketEvent: eventOverride,
@@ -47,19 +57,24 @@ export default function createWebResourceAdapter({
             actionHook: ({
                 useFormData
             }, params) => {
-                const {axios, routeFunction} = useContext();
+                const {axios, offline = false, routeFunction} = useContext();
                 const paramName = useMemo(() => paramNameOverride ?? (resource && (paramNameCallback?.(resource) ?? pluralize.singular(requireNotNull(resource.split(".").pop())).replace(/-/g, "_"))), [paramNameOverride, resource]);
     
                 return useMemo(() => ({
                     async store(data, config) {
                         const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
-                        return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
-                            ...config,
-                            headers: {
-                                ...config?.headers,
-                                "content-type": "multipart/form-data"
-                            },
-                        } : config)).data).data)
+                        try {
+                            return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                                ...config,
+                                headers: {
+                                    ...config?.headers,
+                                    "content-type": "multipart/form-data"
+                                },
+                            } : config)).data).data)
+                        }
+                        catch (e) {
+                            handleError(e);
+                        }
                     },
                     async batchStore(data, config) {
                         const body = {
@@ -164,15 +179,16 @@ export default function createWebResourceAdapter({
                                 throw e;
                             }
                         }
-                    }
+                    },
+                    offline
                 }), [useFormData, params, axios, routeFunction])
             },
-            eventHook: (params, event, handler, dependencies) => {
+            eventHook: (params, event, handler, enabled, dependencies) => {
                 const eventBase = useMemo(() => eventOverride ?? eventNameCallback?.(resource, params) ?? resource?.split(".").map(part => {
                     const singular = pluralize.singular(part).replaceAll("-", "_");
                     return (params && singular in params) ? `${part}.${params[singular]}` : part;
                 }).join(".") ?? null, [params]);
-                useSocket(handler ? `${eventBase}.${event}` : null, handler ?? (() => {}), dependencies);
+                useSocket(enabled ? `${eventBase}.${event}` : null, handler, dependencies);
             }
         }
     }
