@@ -1,8 +1,8 @@
 import { createRequiredContext } from "@enymo/react-better-context";
-import { OfflineError, type Params, type ResourceBackendAdapter } from "@enymo/react-resource-hook";
+import { type Params, type ResourceBackendAdapter } from "@enymo/react-resource-hook";
 import useSocket from "@enymo/react-socket-hook";
 import { requireNotNull } from "@enymo/ts-nullsafe";
-import { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import pluralize from "pluralize";
 import { useMemo } from "react";
 import { RouteFunction } from "./types";
@@ -13,20 +13,18 @@ export type { RouteFunction };
 const [WebResourceProvider, useContext] = createRequiredContext<{
     axios: AxiosInstance,
     routeFunction: RouteFunction,
-    offline?: boolean
+    addOfflineListener?: (listener: (offline: boolean) => void) => () => void
 }>("WebResourceProvider must be present in component tree");
 
 export { WebResourceProvider };
 export default function createWebResourceAdapter({
     reactNative = false,
     paramNameCallback,
-    eventNameCallback,
-    offlineCallback
+    eventNameCallback
 }: {
     reactNative?: boolean,
     paramNameCallback?: (resource: string) => string,
-    eventNameCallback?: (resource: string, params?: Params) => string,
-    offlineCallback?: (response: AxiosResponse) => boolean
+    eventNameCallback?: (resource: string, params?: Params) => string
 }): ResourceBackendAdapter<{
     paramName?: string,
     socketEvent?: string,
@@ -35,14 +33,7 @@ export default function createWebResourceAdapter({
     transformDates?: boolean
 }, {
     useFormData?: boolean
-}, AxiosRequestConfig, AxiosError> {
-    const handleError = (e: unknown) => {
-        if (e instanceof AxiosError && (e.response === undefined || offlineCallback?.(e.response))) {
-            throw OfflineError
-        }
-        throw e;
-    }
-
+}, AxiosRequestConfig> {
     return (resource, {
         paramName: paramNameOverride,
         socketEvent: eventOverride,
@@ -57,24 +48,19 @@ export default function createWebResourceAdapter({
             actionHook: ({
                 useFormData
             }, params) => {
-                const {axios, offline = false, routeFunction} = useContext();
+                const {axios, addOfflineListener = () => () => undefined, routeFunction} = useContext();
                 const paramName = useMemo(() => paramNameOverride ?? (resource && (paramNameCallback?.(resource) ?? pluralize.singular(requireNotNull(resource.split(".").pop())).replace(/-/g, "_"))), [paramNameOverride, resource]);
     
                 return useMemo(() => ({
                     async store(data, config) {
                         const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
-                        try {
-                            return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
-                                ...config,
-                                headers: {
-                                    ...config?.headers,
-                                    "content-type": "multipart/form-data"
-                                },
-                            } : config)).data).data)
-                        }
-                        catch (e) {
-                            handleError(e);
-                        }
+                        return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
+                            ...config,
+                            headers: {
+                                ...config?.headers,
+                                "content-type": "multipart/form-data"
+                            },
+                        } : config)).data).data)
                     },
                     async batchStore(data, config) {
                         const body = {
@@ -180,7 +166,7 @@ export default function createWebResourceAdapter({
                             }
                         }
                     },
-                    offline
+                    addOfflineListener 
                 }), [useFormData, params, axios, routeFunction])
             },
             eventHook: (params, event, handler, enabled, dependencies) => {
