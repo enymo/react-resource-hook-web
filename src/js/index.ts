@@ -11,6 +11,20 @@ import { objectNeedsFormDataConversion, objectToFormData, unwrap } from "./util"
 
 export type { RouteFunction };
 
+export type WebResourceConfig = {
+    paramName?: string,
+    socketEvent?: string,
+    transformer?: (item: any) => Promise<any> | any,
+    inverseTransformer?: (item: any) => Promise<any> | any,
+    transformDates?: boolean
+}
+
+export type WebUseConfig = {
+    useFormData?: boolean
+}
+
+export type WebRequestConfig = AxiosRequestConfig;
+
 const [WebResourceProvider, useContext] = createRequiredContext<{
     axios: AxiosInstance,
     routeFunction: RouteFunction,
@@ -26,15 +40,7 @@ export default function createWebResourceAdapter({
     reactNative?: boolean,
     paramNameCallback?: (resource: string) => string,
     eventNameCallback?: (resource: string, params?: Params) => string
-}): ResourceBackendAdapter<{
-    paramName?: string,
-    socketEvent?: string,
-    transformer?: (item: any) => Promise<any> | any,
-    inverseTransformer?: (item: any) => Promise<any> | any,
-    transformDates?: boolean
-}, {
-    useFormData?: boolean
-}, AxiosRequestConfig> {
+}): ResourceBackendAdapter<WebResourceConfig, WebUseConfig, WebRequestConfig> {
     return (resource, {
         paramName: paramNameOverride,
         socketEvent: eventOverride,
