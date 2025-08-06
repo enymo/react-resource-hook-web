@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@enymo/react-better-context": "^1.0.1",
+    "@enymo/react-resource-hook-util": "^1.0.0",
     "@enymo/ts-nullsafe": "^1.1.1",
     "axios": "^1.7.2",
     "pluralize": "^8.0.0"

@@ -1,12 +1,13 @@
 import { createRequiredContext } from "@enymo/react-better-context";
 import { type Params, type ResourceBackendAdapter } from "@enymo/react-resource-hook";
+import { dateTransformer, filter, identity, inverseDateTransformer } from "@enymo/react-resource-hook-util";
 import useSocket from "@enymo/react-socket-hook";
 import { requireNotNull } from "@enymo/ts-nullsafe";
 import { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import pluralize from "pluralize";
 import { useMemo } from "react";
 import { RouteFunction } from "./types";
-import { conditionalApply, dateTransformer, filter, identity, inverseDateTransformer, objectNeedsFormDataConversion, objectToFormData, unwrap } from "./util";
+import { objectNeedsFormDataConversion, objectToFormData, unwrap } from "./util";
 
 export type { RouteFunction };
 
@@ -53,7 +54,7 @@ export default function createWebResourceAdapter({
     
                 return useMemo(() => ({
                     async store(data, config) {
-                        const body = conditionalApply(await inverseTransformer(data), inverseDateTransformer, transformDates);
+                        const body = await inverseTransformer(data);
                         return transformer(unwrap((await axios.post(routeFunction(`${resource}.store`, params), (useFormData || objectNeedsFormDataConversion(body, reactNative)) ? objectToFormData(body, reactNative) : body, useFormData ? {
                             ...config,
                             headers: {
